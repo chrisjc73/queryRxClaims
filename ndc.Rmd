@@ -1,60 +1,125 @@
 ---
-title: "Finding prescription drug claims"
+title: "Querying prescription drug claims"
 author: "Benjamin Chan (chanb@ohsu.edu)"
 date: "Monday, January 12, 2015"
-output: ioslides_presentation
+output:
+  ioslides_presentation:
+    keep_md: yes
+    smaller: yes
+    widescreen: yes
 ---
-
-
+  
+  
 ## The problem
-
-* Prescription drug claims usually only have NDC codes
-    + Drug names are usually not on claims
-    + Drug classes may be cast too wide of a net
-* There are ~150K NDC codes listed on the [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm)
-* Going to [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm) would be easy *except*
+  
+* You need to look for prescription drug claims for drug *XYZ*
+* Prescription drug claims usually only have NDC codes to describe the prescription filled
+    + Drug names are typically not on claims
+    + Drug classes, if present, may cast too wide of a net
+* There are ~150K NDC codes listed on [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm)
+* Going to [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm) would be easy *except*...
     + [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm) uses a different coding system than what appears on claims
 * **How to query prescription drug claims for only certain drugs?**
-
-
+  
+  
 ## Step 0
-
+  
 If you can get a topic expert to give you a list of NDC codes to query for, then you're golden... Except
 
-* What if there are new drugs on the market?
+* What if there are new drugs in the same class on the market?
 * What if there are new dosages for the same substance?
 * What if there are new packagings for the same substance?
 * What if there are new manufacturers for the same substance?
+* What is the topic expert mistypes a code?
+
+Would like to have a less error-prone process.
 
 
 ## Step 1
 
-Grab the [NDC translation dataset](https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt).
-
-It is maintained by me at [GitHub](https://github.com/benjamin-chan/NDCTranslation).
-
-
-## R Markdown
-
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
-
-## Slide with Bullets
-
-- Bullet 1
-- Bullet 2
-- Bullet 3
-
-## Slide with R Code and Output
-
-```{r}
-summary(cars)
-```
-
-## Slide with Plot
+Import the NDC translation dataset into your analysis package.
 
 ```{r, echo=FALSE}
-plot(cars)
+require(data.table, quietly=TRUE)
+setInternet2()
 ```
 
+It is maintained by me at [GitHub](https://github.com/benjamin-chan/NDCTranslation). Go ahead and fork it!
+The Git repo has 2 branches
+
+* `master` produces a [zipped data file](https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip)
+
+```{r}
+url <- "https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip"
+f <- tempfile()
+download.file(url, f)
+con <- unz(f, "NDCTranslationTable.txt")
+ndcMaster <- read.delim(con, stringsAsFactors=FALSE)
+ndcMaster <- data.table(ndcMaster)
+```
+
+* `TextFile` produces a [tab-delimited data file](https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt)
+
+```{r, eval=FALSE}
+url <- "https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt"
+ndcMaster <- fread(url, colClasses=rep("character", 22))
+```
+
+
+## Step 2
+
+Go crazy with regular expressions to produce a drug lookup table.
+
+Some of the more important columns
+
+* `nonproprietaryname`
+* `substancename`
+* `routename`
+* `pharm_classes`
+* `ndcPackageFmt11` (11-digit NDC format found on claims; this will be you key variable)
+
+```{r}
+ndcLookupA <- ndcMaster[grep("beta.+blocker", pharm_classes, ignore.case=TRUE)]
+ndcLookupB <- ndcMaster[grepl("methadone|buprenorphine|naloxone", substancename, ignore.case=TRUE)]
+ndcLookupC <- ndcMaster[grep("[a-z]tazone", nonproprietaryname, ignore.case=TRUE)]
+```
+
+## Step 3
+
+Check.
+
+```{r}
+ndcLookupA[, .N, substr(pharm_classes, 1, 60)][order(N, decreasing=TRUE)]
+ndcLookupA[grep("^(carbonic|increased|(adrenergic alpha-ag))", pharm_classes, ignore.case=TRUE),
+           .N,
+           list(substr(pharm_classes, 1, 20), substancename)]
+```
+
+## Step 3
+
+Check.
+
+```{r}
+ndcLookupB[, .N, substancename][order(N, decreasing=TRUE)]
+ndcLookupB[, .N, routename][order(N, decreasing=TRUE)]
+```
+
+## Step 3
+
+Check.
+
+```{r}
+ndcLookupC[, .N, nonproprietaryname][order(N, decreasing=TRUE)]
+```
+
+
+## Step 4
+
+Do an inner join on the claims data to the drug lookup table.
+
+```{r, eval=FALSE}
+setkey(rxClaims, ndc)
+ndcLookupA <- ndcLookupA[, ndc := ndcPackageFmt11]
+setkey(ndcLookupA, ndc)
+rxClaimsA <- merge(rxClaims, ndcLookupA)
+```
