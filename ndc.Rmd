@@ -1,0 +1,60 @@
+---
+title: "Finding prescription drug claims"
+author: "Benjamin Chan (chanb@ohsu.edu)"
+date: "Monday, January 12, 2015"
+output: ioslides_presentation
+---
+
+
+## The problem
+
+* Prescription drug claims usually only have NDC codes
+    + Drug names are usually not on claims
+    + Drug classes may be cast too wide of a net
+* There are ~150K NDC codes listed on the [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm)
+* Going to [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm) would be easy *except*
+    + [fda.gov](http://www.fda.gov/Drugs/InformationOnDrugs/ucm142438.htm) uses a different coding system than what appears on claims
+* **How to query prescription drug claims for only certain drugs?**
+
+
+## Step 0
+
+If you can get a topic expert to give you a list of NDC codes to query for, then you're golden... Except
+
+* What if there are new drugs on the market?
+* What if there are new dosages for the same substance?
+* What if there are new packagings for the same substance?
+* What if there are new manufacturers for the same substance?
+
+
+## Step 1
+
+Grab the [NDC translation dataset](https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt).
+
+It is maintained by me at [GitHub](https://github.com/benjamin-chan/NDCTranslation).
+
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Code and Output
+
+```{r}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
