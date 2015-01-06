@@ -49,7 +49,7 @@ The Git repo has 2 branches
 
 * `master` produces a [zipped data file](https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip)
 
-```{r}
+```{r, echo=FALSE, eval=FALSE}
 url <- "https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip"
 f <- tempfile()
 download.file(url, f)
@@ -63,6 +63,16 @@ ndcMaster <- data.table(ndcMaster)
 ```{r, eval=FALSE}
 url <- "https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt"
 ndcMaster <- fread(url, colClasses=rep("character", 22))
+```
+
+```{r, echo=FALSE}
+readNDC <- function () {
+  url <- "https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt"
+  ndcMaster <- fread(url, colClasses=rep("character", 22))
+  ndcMaster
+}
+t <- system.time(ndcMaster <- readNDC())
+message(sprintf("This took %.2f minutes", t[3] / 60))
 ```
 
 
@@ -79,7 +89,7 @@ Some of the more important columns
 * `ndcPackageFmt11` (11-digit NDC format found on claims; this will be you key variable)
 
 ```{r}
-ndcLookupA <- ndcMaster[grep("beta.+blocker", pharm_classes, ignore.case=TRUE)]
+ndcLookupA <- ndcMaster[grep("angiotensin.+receptor.blocker", pharm_classes, ignore.case=TRUE)]
 ndcLookupB <- ndcMaster[grepl("methadone|buprenorphine|naloxone", substancename, ignore.case=TRUE)]
 ndcLookupC <- ndcMaster[grep("[a-z]tazone", nonproprietaryname, ignore.case=TRUE)]
 ```
@@ -90,9 +100,9 @@ Check.
 
 ```{r}
 ndcLookupA[, .N, substr(pharm_classes, 1, 60)][order(N, decreasing=TRUE)]
-ndcLookupA[grep("^(carbonic|increased|(adrenergic alpha-ag))", pharm_classes, ignore.case=TRUE),
+ndcLookupA[grep("^increased", pharm_classes, ignore.case=TRUE),
            .N,
-           list(substr(pharm_classes, 1, 20), substancename)]
+           substancename]
 ```
 
 ## Step 3
