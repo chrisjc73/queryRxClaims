@@ -127,21 +127,26 @@
 <p>It is maintained by me at <a href='https://github.com/benjamin-chan/NDCTranslation' title=''>GitHub</a>. Go ahead and fork it! The Git repo has 2 branches</p>
 
 <ul>
-<li><p><code>master</code> produces a <a href='https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip' title=''>zipped data file</a></p></li>
-<li><p><code>TextFile</code> produces a <a href='https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt' title=''>tab-delimited data file</a></p></li>
+<li><code>master</code> produces a <a href='https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip' title=''>zipped data file</a></li>
+</ul>
+
+<pre class = 'prettyprint lang-r'>url &lt;- &quot;https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip&quot;
+f &lt;- tempfile()
+download.file(url, f)
+con &lt;- unz(f, &quot;NDCTranslationTable.txt&quot;)
+ndcMaster &lt;- read.delim(con, stringsAsFactors=FALSE)
+ndcMaster &lt;- data.table(ndcMaster)</pre>
+
+<pre >## Downloading and reading the zip file took 21.75 seconds</pre>
+
+<ul>
+<li><code>TextFile</code> produces a <a href='https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt' title=''>tab-delimited data file</a></li>
 </ul>
 
 <pre class = 'prettyprint lang-r'>url &lt;- &quot;https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt&quot;
 ndcMaster &lt;- fread(url, colClasses=rep(&quot;character&quot;, 22))</pre>
 
-<pre >## Warning in download.file(input, tt, mode = &quot;wb&quot;): downloaded length
-## 64944674 != reported length 64944674</pre>
-
-<pre >## 
-Read 84.0% of 154698 rows
-Read 154698 rows and 22 (of 22) columns from 0.060 GB file in 00:00:03</pre>
-
-<pre >## This took 0.23 minutes</pre>
+<pre >## Downloading and reading the text file took 90.00 seconds</pre>
 
 </article></slide><slide class=''><hgroup><h2>Step 2</h2></hgroup><article  id="step-2" class="smaller ">
 
@@ -157,8 +162,11 @@ Read 154698 rows and 22 (of 22) columns from 0.060 GB file in 00:00:03</pre>
 <li><code>ndcPackageFmt11</code> (11-digit NDC format found on claims; this will be you key variable)</li>
 </ul>
 
-<pre class = 'prettyprint lang-r'>ndcLookupA &lt;- ndcMaster[grep(&quot;angiotensin.+receptor.blocker&quot;, pharm_classes, ignore.case=TRUE)]
+<pre class = 'prettyprint lang-r'>## Query for ARBs
+ndcLookupA &lt;- ndcMaster[grep(&quot;angiotensin.+receptor.blocker&quot;, pharm_classes, ignore.case=TRUE)]
+## Query for opioid addiction treatment
 ndcLookupB &lt;- ndcMaster[grepl(&quot;methadone|buprenorphine|naloxone&quot;, substancename, ignore.case=TRUE)]
+## Query for type 2 diabetes drugs
 ndcLookupC &lt;- ndcMaster[grep(&quot;[a-z]tazone&quot;, nonproprietaryname, ignore.case=TRUE)]</pre>
 
 </article></slide><slide class=''><hgroup><h2>Step 3</h2></hgroup><article  id="step-3" class="smaller ">
@@ -242,7 +250,23 @@ ndcLookupC &lt;- ndcMaster[grep(&quot;[a-z]tazone&quot;, nonproprietaryname, ign
 <pre class = 'prettyprint lang-r'>setkey(rxClaims, ndc)
 ndcLookupA &lt;- ndcLookupA[, ndc := ndcPackageFmt11]
 setkey(ndcLookupA, ndc)
-rxClaimsA &lt;- merge(rxClaims, ndcLookupA)</pre></article></slide>
+rxClaimsA &lt;- merge(rxClaims, ndcLookupA)</pre>
+
+</article></slide><slide class=''><hgroup><h2>Session info</h2></hgroup><article  id="session-info" class="smaller ">
+
+<pre >## R version 3.1.1 (2014-07-10)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] data.table_1.9.2
+## 
+## loaded via a namespace (and not attached):
+##  [1] digest_0.6.4     evaluate_0.5.5   formatR_1.0      htmltools_0.2.6 
+##  [5] knitr_1.6        plyr_1.8.1       Rcpp_0.11.2      reshape2_1.4    
+##  [9] rmarkdown_0.2.64 stringr_0.6.2    tools_3.1.1      yaml_2.1.13</pre></article></slide>
 
 
   <slide class="backdrop"></slide>

@@ -49,13 +49,27 @@ The Git repo has 2 branches
 
 * `master` produces a [zipped data file](https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip)
 
-```{r, echo=FALSE, eval=FALSE}
+```{r, eval=FALSE}
 url <- "https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip"
 f <- tempfile()
 download.file(url, f)
 con <- unz(f, "NDCTranslationTable.txt")
 ndcMaster <- read.delim(con, stringsAsFactors=FALSE)
 ndcMaster <- data.table(ndcMaster)
+```
+
+```{r, echo=FALSE}
+readNDC <- function () {
+  url <- "https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/master/NDCTranslationTable.zip"
+  f <- tempfile()
+  download.file(url, f)
+  con <- unz(f, "NDCTranslationTable.txt")
+  ndcMaster <- read.delim(con, stringsAsFactors=FALSE)
+  ndcMaster <- data.table(ndcMaster)
+  ndcMaster
+}
+t <- system.time(ndcMaster <- readNDC())
+message(sprintf("Downloading and reading the zip file took %.2f seconds", t[3]))
 ```
 
 * `TextFile` produces a [tab-delimited data file](https://raw.githubusercontent.com/benjamin-chan/NDCTranslation/TextFile/NDCTranslationTable.txt)
@@ -72,7 +86,7 @@ readNDC <- function () {
   ndcMaster
 }
 t <- system.time(ndcMaster <- readNDC())
-message(sprintf("This took %.2f minutes", t[3] / 60))
+message(sprintf("Downloading and reading the text file took %.2f seconds", t[3]))
 ```
 
 
@@ -89,8 +103,11 @@ Some of the more important columns
 * `ndcPackageFmt11` (11-digit NDC format found on claims; this will be you key variable)
 
 ```{r}
+## Query for ARBs
 ndcLookupA <- ndcMaster[grep("angiotensin.+receptor.blocker", pharm_classes, ignore.case=TRUE)]
+## Query for opioid addiction treatment
 ndcLookupB <- ndcMaster[grepl("methadone|buprenorphine|naloxone", substancename, ignore.case=TRUE)]
+## Query for type 2 diabetes drugs
 ndcLookupC <- ndcMaster[grep("[a-z]tazone", nonproprietaryname, ignore.case=TRUE)]
 ```
 
@@ -132,4 +149,11 @@ setkey(rxClaims, ndc)
 ndcLookupA <- ndcLookupA[, ndc := ndcPackageFmt11]
 setkey(ndcLookupA, ndc)
 rxClaimsA <- merge(rxClaims, ndcLookupA)
+```
+
+
+## Session info
+
+```{r, echo=FALSE}
+print(sessionInfo(), locale=FALSE)
 ```
